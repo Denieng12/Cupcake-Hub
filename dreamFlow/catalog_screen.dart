@@ -4,8 +4,12 @@ import 'package:dreamflow/services/cupcake_service.dart';
 import 'package:dreamflow/theme/app_theme.dart';
 import 'package:dreamflow/screens/product_detail_screen.dart';
 import 'package:dreamflow/providers/cart_provider.dart';
+import 'package:dreamflow/widgets/adaptive_layout.dart';
+
+import 'package:dreamflow/widgets/platform_image.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class CatalogScreen extends StatefulWidget {
   final String? initialCategory;
@@ -67,10 +71,10 @@ class _CatalogScreenState extends State<CatalogScreen> with SingleTickerProvider
       case 'Nome':
         _filteredCupcakes.sort((a, b) => a.nome.compareTo(b.nome));
         break;
-      case 'Preu00e7o - Menor para Maior':
+      case 'Preço - Menor para Maior':
         _filteredCupcakes.sort((a, b) => a.preco.compareTo(b.preco));
         break;
-      case 'Preu00e7o - Maior para Menor':
+      case 'Preço - Maior para Menor':
         _filteredCupcakes.sort((a, b) => b.preco.compareTo(a.preco));
         break;
     }
@@ -87,7 +91,7 @@ class _CatalogScreenState extends State<CatalogScreen> with SingleTickerProvider
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Catu00e1logo'),
+        title: const Text('Catálogo'),
         actions: [
           PopupMenuButton<String>(
             icon: const Icon(Icons.sort),
@@ -123,25 +127,36 @@ class _CatalogScreenState extends State<CatalogScreen> with SingleTickerProvider
           labelStyle: const TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '${_filteredCupcakes.length} cupcakes encontrados',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[600],
-                  ),
+      body: AdaptiveLayout(
+        builder: (context, screenSize) {
+          return Center(
+            child: Container(
+              constraints: BoxConstraints(
+                maxWidth: ResponsiveSpacing.contentMaxWidth(context),
+              ),
+              child: Padding(
+                padding: ResponsiveSpacing.screenPadding(context),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${_filteredCupcakes.length} cupcakes encontrados',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Colors.grey[600],
+                          ),
+                    ),
+                    const SizedBox(height: 16),
+                    Expanded(
+                      child: _filteredCupcakes.isEmpty
+                          ? _buildEmptyState()
+                          : _buildCupcakeGrid(),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: _filteredCupcakes.isEmpty
-                  ? _buildEmptyState()
-                  : _buildCupcakeGrid(),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -178,12 +193,15 @@ class _CatalogScreenState extends State<CatalogScreen> with SingleTickerProvider
   }
 
   Widget _buildCupcakeGrid() {
+    // Determinar o nu00famero de colunas com base no tamanho da tela
+    final crossAxisCount = ResponsiveSpacing.gridColumns(context);
+    
     return GridView.builder(
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
         childAspectRatio: 0.72,
         crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
+        mainAxisSpacing: 24,
       ),
       itemCount: _filteredCupcakes.length,
       itemBuilder: (context, index) {
@@ -227,17 +245,14 @@ class _CatalogScreenState extends State<CatalogScreen> with SingleTickerProvider
           children: [
             // Image
             Expanded(
-              child: Hero(
-                tag: 'cupcake_image_${cupcake.id}',
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                    image: DecorationImage(
-                      image: CachedNetworkImageProvider(
-                          '${cupcake.imagem}?w=300&h=300'),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                child: PlatformImage(
+                  imageUrl: cupcake.imagem,
+                  width: double.infinity,
+                  height: double.infinity,
+                  fit: BoxFit.cover,
+                  heroTag: 'cupcake_image_${cupcake.id}',
                 ),
               ),
             ),

@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:dreamflow/models/cart.dart';
 import 'package:dreamflow/providers/cart_provider.dart';
+import 'package:dreamflow/providers/auth_provider.dart';
 import 'package:dreamflow/theme/app_theme.dart';
+import 'package:dreamflow/screens/login_screen.dart';
 import 'package:dreamflow/screens/confirmation_screen.dart';
+import 'package:dreamflow/widgets/adaptive_layout.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({Key? key}) : super(key: key);
@@ -25,8 +29,31 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final _estadoController = TextEditingController();
   final _cepController = TextEditingController();
 
-  String _paymentMethod = 'Crédito';
+  String _paymentMethod = 'Cru00e9dito';
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  void _loadUserData() {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (authProvider.isAuthenticated) {
+      final user = authProvider.user!;
+      _nomeController.text = user.nome;
+      _emailController.text = user.email;
+      _telefoneController.text = user.telefone;
+      _enderecoController.text = user.endereco;
+      _numeroController.text = user.numero;
+      _complementoController.text = user.complemento;
+      _bairroController.text = user.bairro;
+      _cidadeController.text = user.cidade;
+      _estadoController.text = user.estado;
+      _cepController.text = user.cep;
+    }
+  }
 
   @override
   void dispose() {
@@ -84,6 +111,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   @override
   Widget build(BuildContext context) {
     final cart = Provider.of<CartProvider>(context);
+    final authProvider = Provider.of<AuthProvider>(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -91,7 +119,85 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       ),
       body: cart.items.isEmpty
           ? _buildEmptyCart()
-          : _buildCheckoutForm(context, cart),
+          : !authProvider.isAuthenticated
+              ? _buildLoginPrompt()
+              : _buildCheckoutForm(context, cart),
+    );
+  }
+
+  Widget _buildLoginPrompt() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.account_circle_outlined,
+              size: 100,
+              color: AppTheme.primaryColor.withOpacity(0.5),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Entre na sua conta',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: AppTheme.primaryColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Para finalizar seu pedido, voci\u00ea precisa estar logado na sua conta.',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: Colors.grey[600],
+                  ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const LoginScreen()),
+                  ).then((_) {
+                    // Reload after login
+                    setState(() {});
+                  });
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryColor,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+                child: const Text(
+                  'ENTRAR',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                'VOLTAR PARA A LOJA',
+                style: TextStyle(
+                  color: AppTheme.primaryColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -133,33 +239,105 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Widget _buildCheckoutForm(BuildContext context, CartProvider cart) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildOrderSummary(cart),
-            const SizedBox(height: 30),
-            _buildDeliveryInformation(),
-            const SizedBox(height: 30),
-            _buildPaymentMethod(),
-            const SizedBox(height: 30),
-            _buildSubmitButton(),
-            const SizedBox(height: 40),
-          ],
-        ),
-      ),
+    // Layout adaptativo baseado no tamanho da tela
+    return AdaptiveLayout(
+      builder: (context, screenSize) {
+        if (screenSize == ScreenSize.small) {
+          // Layout original para telas pequenas
+          return SingleChildScrollView(
+            padding: ResponsiveSpacing.screenPadding(context),
+            child: Center(
+              child: Container(
+                constraints: BoxConstraints(
+                  maxWidth: ResponsiveSpacing.contentMaxWidth(context),
+                ),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildOrderSummary(cart),
+                      const SizedBox(height: 30),
+                      _buildDeliveryInformation(),
+                      const SizedBox(height: 30),
+                      _buildPaymentMethod(),
+                      const SizedBox(height: 30),
+                      _buildSubmitButton(),
+                      const SizedBox(height: 40),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        } else {
+          // Layout de duas colunas para telas maiores
+          return SingleChildScrollView(
+            padding: ResponsiveSpacing.screenPadding(context),
+            child: Center(
+              child: Container(
+                constraints: BoxConstraints(
+                  maxWidth: ResponsiveSpacing.contentMaxWidth(context),
+                ),
+                child: Form(
+                  key: _formKey,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Coluna de informau00e7u00f5es de entrega e pagamento
+                      Expanded(
+                        flex: 6,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildDeliveryInformation(),
+                            const SizedBox(height: 30),
+                            _buildPaymentMethod(),
+                            if (screenSize == ScreenSize.medium)
+                              Column(
+                                children: [
+                                  const SizedBox(height: 30),
+                                  _buildSubmitButton(),
+                                ],
+                              ),
+                            const SizedBox(height: 40),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 32),
+                      // Coluna do resumo do pedido
+                      Expanded(
+                        flex: 4,
+                        child: Column(
+                          children: [
+                            _buildOrderSummary(cart),
+                            if (screenSize == ScreenSize.large)
+                              Column(
+                                children: [
+                                  const SizedBox(height: 30),
+                                  _buildSubmitButton(),
+                                ],
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
+      },
     );
   }
 
   Widget _buildOrderSummary(CartProvider cart) {
     return Card(
-      elevation: 0,
+      elevation: context.isDesktop ? 1 : 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(context.isDesktop ? 24 : 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -241,7 +419,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Informações de Entrega',
+          'Informau00e7u00f5es de Entrega',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -277,7 +455,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     return 'Por favor, informe seu e-mail';
                   }
                   if (!value.contains('@') || !value.contains('.')) {
-                    return 'Informe um e-mail válido';
+                    return 'Informe um e-mail vu00e1lido';
                   }
                   return null;
                 },
@@ -307,12 +485,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         TextFormField(
           controller: _enderecoController,
           decoration: const InputDecoration(
-            labelText: 'Endereço',
+            labelText: 'Endereu00e7o',
             prefixIcon: Icon(Icons.location_on),
           ),
           validator: (value) {
             if (value == null || value.isEmpty) {
-              return 'Por favor, informe seu endereço';
+              return 'Por favor, informe seu endereu00e7o';
             }
             return null;
           },
@@ -326,12 +504,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 controller: _numeroController,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
-                  labelText: 'Número',
+                  labelText: 'Nu00famero',
                   prefixIcon: Icon(Icons.pin),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Informe o número';
+                    return 'Informe o nu00famero';
                   }
                   return null;
                 },
@@ -426,7 +604,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Método de Pagamento',
+          'Mu00e9todo de Pagamento',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
               ),

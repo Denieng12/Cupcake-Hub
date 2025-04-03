@@ -269,7 +269,7 @@ class _SignupScreenState extends State<SignupScreen> {
           return 'Por favor, informe seu e-mail';
         }
         if (!value.contains('@') || !value.contains('.')) {
-          return 'Informe um e-mail vu00e1lido';
+          return 'Informe um e-mail válido';
         }
         return null;
       },
