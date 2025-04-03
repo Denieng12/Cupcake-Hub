@@ -5,11 +5,7 @@ import 'package:dreamflow/providers/auth_provider.dart';
 import 'package:dreamflow/theme/app_theme.dart';
 import 'package:dreamflow/screens/login_screen.dart';
 import 'package:dreamflow/screens/confirmation_screen.dart';
-import 'package:dreamflow/widgets/adaptive_layout.dart';
-import 'package:dreamflow/utils/navigation_helper.dart';
-import 'package:dreamflow/widgets/responsive_container.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({Key? key}) : super(key: key);
@@ -164,7 +160,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    NavigationHelper.createRoute(context, const LoginScreen()),
+                    MaterialPageRoute(builder: (context) => const LoginScreen()),
                   ).then((_) {
                     // Reload after login
                     setState(() {});
@@ -215,7 +211,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           ),
           const SizedBox(height: 24),
           Text(
-            'Seu carrinho está vazio',
+            'Seu carrinho estu00e1 vazio',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   color: Colors.grey[700],
                   fontWeight: FontWeight.bold,
@@ -241,105 +237,33 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Widget _buildCheckoutForm(BuildContext context, CartProvider cart) {
-    // Layout adaptativo baseado no tamanho da tela
-    return AdaptiveLayout(
-      builder: (context, screenSize) {
-        if (screenSize == ScreenSize.small) {
-          // Layout original para telas pequenas
-          return SingleChildScrollView(
-            padding: ResponsiveSpacing.screenPadding(context),
-            child: Center(
-              child: Container(
-                constraints: BoxConstraints(
-                  maxWidth: ResponsiveSpacing.contentMaxWidth(context),
-                ),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildOrderSummary(cart),
-                      const SizedBox(height: 30),
-                      _buildDeliveryInformation(),
-                      const SizedBox(height: 30),
-                      _buildPaymentMethod(),
-                      const SizedBox(height: 30),
-                      _buildSubmitButton(),
-                      const SizedBox(height: 40),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          );
-        } else {
-          // Layout de duas colunas para telas maiores
-          return SingleChildScrollView(
-            padding: ResponsiveSpacing.screenPadding(context),
-            child: Center(
-              child: Container(
-                constraints: BoxConstraints(
-                  maxWidth: ResponsiveSpacing.contentMaxWidth(context),
-                ),
-                child: Form(
-                  key: _formKey,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Coluna de informau00e7u00f5es de entrega e pagamento
-                      Expanded(
-                        flex: 6,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildDeliveryInformation(),
-                            const SizedBox(height: 30),
-                            _buildPaymentMethod(),
-                            if (screenSize == ScreenSize.medium)
-                              Column(
-                                children: [
-                                  const SizedBox(height: 30),
-                                  _buildSubmitButton(),
-                                ],
-                              ),
-                            const SizedBox(height: 40),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 32),
-                      // Coluna do resumo do pedido
-                      Expanded(
-                        flex: 4,
-                        child: Column(
-                          children: [
-                            _buildOrderSummary(cart),
-                            if (screenSize == ScreenSize.large)
-                              Column(
-                                children: [
-                                  const SizedBox(height: 30),
-                                  _buildSubmitButton(),
-                                ],
-                              ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          );
-        }
-      },
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildOrderSummary(cart),
+            const SizedBox(height: 30),
+            _buildDeliveryInformation(),
+            const SizedBox(height: 30),
+            _buildPaymentMethod(),
+            const SizedBox(height: 30),
+            _buildSubmitButton(),
+            const SizedBox(height: 40),
+          ],
+        ),
+      ),
     );
   }
 
   Widget _buildOrderSummary(CartProvider cart) {
     return Card(
-      elevation: context.isDesktop ? 1 : 0,
+      elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Padding(
-        padding: EdgeInsets.all(context.isDesktop ? 24 : 16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -624,10 +548,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     children: [
                       Icon(Icons.credit_card, color: AppTheme.primaryColor),
                       const SizedBox(width: 12),
-                      const Text('Cartão de Crédito'),
+                      const Text('Cartu00e3o de Cru00e9dito'),
                     ],
                   ),
-                  value: 'Crédito',
+                  value: 'Cru00e9dito',
                   groupValue: _paymentMethod,
                   onChanged: (value) {
                     setState(() {
@@ -641,10 +565,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     children: [
                       Icon(Icons.credit_card, color: AppTheme.primaryColor),
                       const SizedBox(width: 12),
-                      const Text('Cartão de Débito'),
+                      const Text('Cartu00e3o de Du00e9bito'),
                     ],
                   ),
-                  value: 'Débito',
+                  value: 'Du00e9bito',
                   groupValue: _paymentMethod,
                   onChanged: (value) {
                     setState(() {
@@ -696,11 +620,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Widget _buildSubmitButton() {
-    final isDesktop = context.isDesktop;
-    
     return SizedBox(
       width: double.infinity,
-      height: isDesktop ? 60 : 56,
+      height: 56,
       child: ElevatedButton(
         onPressed: _isLoading ? null : _submitOrder,
         style: ElevatedButton.styleFrom(
@@ -709,17 +631,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(30),
           ),
-          elevation: isDesktop ? 2 : 0,
-          padding: isDesktop 
-              ? const EdgeInsets.symmetric(vertical: 16, horizontal: 24) 
-              : null,
+          elevation: 0,
         ),
         child: _isLoading
             ? const CircularProgressIndicator(color: Colors.white)
-            : Text(
+            : const Text(
                 'CONFIRMAR PEDIDO',
                 style: TextStyle(
-                  fontSize: isDesktop ? 18 : 16,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
               ),
